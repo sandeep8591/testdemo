@@ -1,0 +1,446 @@
+INdex.html
+--------------------------
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>SunApp</title>
+  <base href="/">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+</head>
+<body>
+  <app-root></app-root>
+</body>
+</html>
+
+----------------------------------------------------------------
+Booklist.jason
+---------------------------------
+[
+    {
+      "id": 1,
+      "title": "Android for Expert",
+      "year": 1996,
+      "author": "George R. R",
+      "price":100
+    },
+    {
+      "id": 2,
+      "title": "Complete Reference",
+      "year": 1998,
+      "author": "George P. R. Martin",
+      "price":1000
+    },
+    {
+      "id": 3,
+      "title": "BackBone JS",
+      "year": 2000,
+      "author": "Kalvin R.V",
+      "price":500
+    },
+    {
+      "id": 4,
+      "title": "Knock Out JS",
+      "year": 2005,
+      "author": "J.J Markin",
+      "price":102
+    },
+    {
+      "id": 5,
+      "title": "Pointer in C",
+      "year": 2011,
+      "author": "Y P Kanitkar",
+      "price":250
+    },
+    {
+      "id": 6,
+      "title": "Big Data",
+      "year": 2011,
+      "author": "Pearson D A",
+      "price":300
+    },
+    {
+      "id": 7,
+      "title": "A Dream of Spring",
+      "year": 2012,
+      "author": "George R. R. Martin",
+      "price":500
+    },
+    {
+      "id": 8,
+      "title": "The Philosopher's Stone",
+      "year": 1997,
+      "author": "J. K. Rowling",
+      "price":550
+    },
+    {
+      "id": 9,
+      "title": "The Chamber of Secrets",
+      "year": 1998,
+      "author": "J. K. Rowling",
+      "price":250
+    },
+    {
+      "id": 10,
+      "title": "The Prisoner of Azkaban",
+      "year": 1999,
+      "author": "J. K. Rowling",
+      "price":100
+    }
+    
+  ]
+----------------------------------------------------------------
+book service.ts
+------------------------------------------------------------
+import { Injectable } from '@angular/core';
+import { IBook } from './book/book';
+import { Observable } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class BookService {
+  url:string="assets/booklist.json";
+  constructor(private http:HttpClient) { }
+  getBooks():Observable<IBook []>
+  {
+    /* let obj: Observable<IBook []>=this.http.get(this.url);
+    return(obj); */
+    return this.http.get<IBook []>(this.url);
+  }
+
+}
+  ---------------------------------------------------------------------
+app.module.ts
+--------------------------------
+import { BrowserModule } from '@angular/platform-browser';
+import { NgModule } from '@angular/core';
+import {FormsModule, ReactiveFormsModule} from '@angular/forms';
+import {HttpClientModule} from '@angular/common/http';
+import { AppComponent } from './app.component';
+import { BookComponent } from './book/book.component';
+import { RouterModule, Route } from '@angular/router';
+import { BuyComponent } from './buy/buy.component';
+
+
+const routes:Route[]=[
+  {
+    path:'book',
+    component:BookComponent},
+    {
+      path:'buy',
+      component:BuyComponent
+    }
+  ];
+
+
+@NgModule({
+  declarations: [
+    AppComponent,
+    BookComponent,
+    BuyComponent
+  ],
+  imports: [
+    BrowserModule,
+    FormsModule,RouterModule.forRoot(routes),ReactiveFormsModule,HttpClientModule
+  ],
+  providers: [],
+  bootstrap: [AppComponent]
+})
+export class AppModule { }
+----------------------------------------------------------------------
+app.component.ts
+--------------------------------------------------
+import { Component } from '@angular/core';
+
+@Component({
+  selector: 'app-root',
+  templateUrl: './app.component.html',
+  styleUrls: ['./app.component.css']
+})
+export class AppComponent {
+  title = 'sun-app';
+}
+---------------------------------------------------------------------------------------
+app.component.html
+----------------------------------------------------------
+<div class="jumbotron">
+
+    <div>
+        <a routerLink="book" class="btn btn-primary">Book</a>
+        <a routerLink="buy" class="btn btn-primary">Buy</a>
+    </div>
+</div>
+<div>
+<router-outlet></router-outlet>
+</div>
+------------------------------------------------------------
+book.ts
+----------------------------------------------------------------
+export interface IBook
+{
+    id:number;
+    title:string;
+    year:number;
+    author:string;
+    price:number;
+}
+--------------------------------------------------------
+book.component.ts
+-------------------------------------------------------
+import { Component, OnInit } from '@angular/core';
+import { IBook } from './book';
+import { BookService } from '../book.service';
+import { FormGroup, FormControl, Validators } from '@angular/forms';
+
+@Component({
+  selector: 'app-book',
+  templateUrl: './book.component.html',
+  styleUrls: ['./book.component.css']
+})
+export class BookComponent implements OnInit {
+  books:IBook[];
+  isUpdate:boolean=false;
+  id:number;
+  title:string;
+  year:number;
+  author:string;
+  price:number;
+  
+ 
+
+  userForm: FormGroup;
+
+
+  constructor(private service:BookService) { }
+
+  ngOnInit() {
+
+    this.userForm=new FormGroup({
+      id:new FormControl('',[Validators.required,Validators.pattern("^[0-9]{4}$")]),
+      title:new FormControl('',[Validators.required,Validators.minLength(6)]),
+      year:new FormControl(null,[Validators.required,Validators.pattern("^[0-9]{4}$")]),
+      author:new FormControl()
+    });
+    this.service.getBooks().subscribe(data=>this.books=data);
+  }
+  update(book:IBook)
+  {
+    this.id=book.id;
+    this.title=book.title;
+    this.year=book.year;
+    this.author=book.author;
+    this.price=book.price;
+    this.isUpdate=true;
+  }
+delete(book:IBook)
+{
+  let arr=this.books.filter(p=>p.id!=book.id);
+  this.books=arr;
+}
+  updateDetail()
+  {
+    let arr=this.books.filter(p=>p.id !=this.id);
+    arr.push({id:this.id,title:this.title,year:this.year,author:this.author,price:this.price});
+    this.books=arr;
+    this.isUpdate=false;
+
+  }
+
+  
+
+  onSubmit(obj:any)
+  {
+    // this.books.map(p=>p.title).forEach(p=>console.log(p));
+    let arr=this.books.filter(p=>p.id==obj.id);
+    if(arr.length>0)
+    {
+    alert("Id alreday exists");
+    }
+    else{
+        this.books.push({id:obj.id,title:obj.title,year:obj.year,author:obj.author,price:obj.price});
+    /* console.log(obj.year); */
+    /* console.log(obj.year); */
+    }
+  }
+
+}
+
+-------------------------------------------------------------------------
+book.component.html
+----------------------------------------------------------------------
+<div class="jumbotron">
+<div>
+  <h1>Book Detail</h1>
+  
+  <table border="10" width="1000px" class="table table-hover">
+    <tr>
+      <th>Book Id</th>
+      <th>Book Title</th>
+      <th>Book Year</th>
+      <th>Book Author</th>
+      
+      <th>Update</th>
+      <th>Delete</th>
+      
+    </tr>
+    
+      <tr *ngFor="let book of books">
+        <td>{{book.id}}</td>
+        <td>{{book.title}}</td>
+        <td>{{book.year}}</td>
+        <td>{{book.author}}</td>
+        
+        
+        <td><button (click)="update(book)" class="btn btn-primary">Update</button></td>
+        <td><button (click)="delete(book)" class="btn btn-primary">Delete</button></td>
+        
+        
+     
+        </tr>
+    
+  </table>
+  <div *ngIf="isUpdate">
+    <div>
+      <label>Book Id</label>
+      <input type="text" [(ngModel)]="id" class="form-control"/>
+</div>
+    <div>
+        <label>Book Title</label>
+        <input type="text" [(ngModel)]="title" class="form-control"/>
+        </div>
+      <div>
+          <label>Book Year</label>
+          <input type="text" [(ngModel)]="year" class="form-control"/>
+      </div>
+      <div>
+          <label>Book Author</label>
+          <input type="text" [(ngModel)]="author" class="form-control"/>
+      </div>
+   
+<button (click)="updateDetail()" class="btn btn-primary">update details</button>
+</div>
+<div class="jumbotron">
+  <h1>Add Book Details</h1>
+  
+  <form [formGroup]="userForm" (ngSubmit)="onSubmit(userForm.value)">
+    <div class="form-group">
+    <label>Book Id:</label>
+    <input type="text"  name="id" class="form-control" formControlName="id">
+    <div *ngIf="userForm.controls['id'].hasError('required')&&(userForm.controls['id'].touched)" class="alert alert-danger">
+      
+ Please Enter Id   </div>
+ <div *ngIf="userForm.controls['id'].hasError('pattern')"  class="alert alert-danger">
+   Id can have only 4 numbers
+ </div>
+    </div>
+    <div class="form-group">
+        <label>Book Title:</label>
+        <input type="text"  name="title" class="form-control" formControlName="title">
+        <div *ngIf="userForm.controls['title'].hasError('required')&& (userForm.controls['title'].touched||userForm.controls['title'].dirty)" class="alert alert-danger">
+          Please Enter Title
+        </div>
+        <div *ngIf="userForm.controls['title'].hasError('minlength')" class="alert alert-danger">
+        Length must be 6 characters
+      </div>
+      </div>
+      
+        <div class="form-group">
+            <label>Book Year:</label>
+            <input type="text" name="year" class="form-control" formControlName="year">
+            <div *ngIf="userForm.controls['year'].hasError('required') && userForm.controls['year'].touched" class="alert alert-danger">
+                Please Enter Year
+              </div>
+              <div *ngIf="userForm.controls['year'].hasError('pattern')" class="alert alert-danger">
+                 Year must be 4 numbers
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Author:</label>
+                <input type="text" name="author" class="form-control" formControlName="author">
+                </div>
+                <button type="submit" class="btn btn-primary">Add Book</button>
+
+</form>
+
+</div>
+-----------------------------------------------------------------------------------------------
+book.component.css
+---------------------------------------------------------------------------------------
+input.ng-valid
+{
+    border-left:5px solid green;
+}
+input.ng-invalid
+{
+    border-left:5px solid red;
+}
+-------------------------------------------------------------------------------
+buy.component.html
+---------------------------------------------------------------
+
+<div class="jumbotron">
+  <p align="center"><b>Your Balance is: {{Balance |currency:'INR'}}</b></p>
+<table border="10" width="1000px" class="table table-hover">
+  <tr>
+    <th>Book Id</th>
+    <th>Book Title</th>
+    <th>Book Year</th>
+    <th>Book Author</th>
+    
+    <th>Update</th>
+    
+    <th>Buy</th>
+  </tr>
+  
+    <tr *ngFor="let book of books">
+      <td>{{book.id}}</td>
+      <td>{{book.title}}</td>
+      <td>{{book.year}}</td>
+      <td>{{book.author}}</td>
+      <td>{{book.price |currency:'INR'}}</td>
+      <td><button (click)="buy(book)" class="btn btn-primary">Buy</button></td>
+</tr>
+</table>
+</div>
+----------------------------------------------------------------------
+buy.component.ts
+-------------------------------------------------------------------
+import { Component, OnInit } from '@angular/core';
+import { IBook } from '../book/book';
+import { BookService } from '../book.service';
+
+@Component({
+  selector: 'app-buy',
+  templateUrl: './buy.component.html',
+  styleUrls: ['./buy.component.css']
+})
+export class BuyComponent implements OnInit {
+  books:IBook[];
+  Balance:number=20000;
+  price:number;
+  servicecharge:number=100;
+ 
+
+  constructor(private service:BookService) { }
+
+  ngOnInit() {
+    this.service.getBooks().subscribe(data=>this.books=data);
+  }
+
+  buy(book:IBook)
+  {
+    this.price=book.price+this.servicecharge;
+    if(this.Balance>book.price)
+    {
+      this.Balance=this.Balance-this.price;
+      alert("your Remaining Balance is:"+this.Balance);
+    }
+    else{
+      alert("amount not sufficient");
+    }
+  }
+}
